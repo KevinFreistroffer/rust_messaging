@@ -1,5 +1,5 @@
 use crate::enums::Message;
-use crate::enums::Message::{Text, Image};
+use crate::enums::Message::{Image, File};
 use crate::enums::{MessageFrom};
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
@@ -22,7 +22,8 @@ pub fn find_message_by_id(id: u32) -> Option<Message> {
   history.iter().find(|message| {
     match message {
       Message::Text(message) => message.id() == id,
-      Message::Image(message) => message.id() == id
+      Message::Image(message) => message.id() == id,
+      Message::File(message) => message.id() == id,
     }
   }).cloned()
 }
@@ -55,13 +56,16 @@ pub fn find_messages_from_sender(from: MessageFrom) -> Option<Vec<Message>> {
   let history: Vec<Message> = get_history();
   
   let results: Vec<Message> = history.iter().filter(|message| {
-    match(message) {
-      Text(msg) => {
+    match message {
+      Message::Text(msg) => {
         msg.from() == from
       },
       Image(msg) => {
         msg.from() == from
-      }
+      }, 
+      File(msg) => {
+        msg.from() == from
+      },
     }
   }).cloned().collect();
 

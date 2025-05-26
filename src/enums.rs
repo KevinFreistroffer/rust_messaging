@@ -1,9 +1,10 @@
-use crate::structs::messages::{image::ImageMessagePackage, text::MessagePackage};
+use crate::structs::messages::{image::ImageMessagePackage, text::MessagePackage, file::FileMessagePackage};
 
 #[derive(Debug, Clone)]
 pub enum Message {
     Image(ImageMessagePackage),
-    Text(MessagePackage)
+    Text(MessagePackage),
+    File(FileMessagePackage)
 }
 
 #[derive(Debug, Clone, PartialEq)]
