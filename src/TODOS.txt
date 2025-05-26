@@ -1,0 +1,27 @@
+# Message System TODOs
+
+## Message History
+- [ ] Add a Vec<MessagePackage> to store message history
+- [ ] Implement methods to search/filter messages
+- [ ] Add timestamps to messages
+
+## Message Types
+- [ ] Add different message types (text, image, file)
+- [ ] Create a MessageType enum with corresponding payloads
+
+## Message Validation
+- [ ] Add message length limits
+- [ ] Implement content validation
+- [ ] Add message priority levels
+
+## Message Routing
+- [ ] Add recipient information
+- [ ] Implement message broadcasting
+- [ ] Create message groups/channels
+
+## Message Status
+- [ ] Add delivery status tracking
+- [ ] Implement read receipts
+- [ ] Add message expiration
+
+Note: These suggestions build on your existing MessagePackage and MessageFrom structures while maintaining the current architecture.

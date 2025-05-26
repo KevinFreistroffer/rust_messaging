@@ -1,0 +1,17 @@
+digital safety institute 
+smaller division of largr company
+chicago area
+
+more front focused js ts react
+python go java
+db postgres mongodb
+gcp, then azure aws
+
+ui's with react html css etc..., dep0loy fe comps terraform gitlab ci/cd, design docs, debugs
+
+cherry on top - visualize scientific data, ml, kubernetes
+
+
+
+
+
