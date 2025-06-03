@@ -1,7 +1,7 @@
 # Message System TODOs
 
 ## Message History
-- [ ] Add a Vec<MessagePackage> to store message history
+- [ ] Add a Vec<TextMessagePackage> to store message history
 - [ ] Implement methods to search/filter messages
 - [ ] Add timestamps to messages
 
@@ -24,4 +24,8 @@
 - [ ] Implement read receipts
 - [ ] Add message expiration
 
-Note: These suggestions build on your existing MessagePackage and MessageFrom structures while maintaining the current architecture.
+
+## Futures
+Add sender_id. Create users. User structs store an id at least
+
+Note: These suggestions build on your existing TextMessagePackage and MessageFrom structures while maintaining the current architecture.

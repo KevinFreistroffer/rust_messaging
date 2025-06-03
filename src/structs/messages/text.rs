@@ -1,52 +1,60 @@
-use crate::enums::MessageFrom;
-use crate::utils::{gen_id};
+use crate::enums::{MessageFrom, MessageType};
+use crate::utils::gen_id;
 use chrono::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::any::Any;
 
-#[derive(Debug, Clone)]
-pub struct MessagePackage {
-  id: u32,
-  message: String,
-  from: MessageFrom,
-  timestamp: DateTime<Utc>
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TextMessagePackage<'a> {
+    message_id: u32,
+    r#type: MessageType,
+    message: &'a str,
+    from: MessageFrom,
+    timestamp: DateTime<Utc>,
 }
 
-impl MessagePackage {
-  pub fn new(from: MessageFrom, message: String) -> Result<Self, String> {
-      if message.len() <= 512 {
-        Ok(Self {
-          id: gen_id(),
-          from,
-          message,
-          timestamp: Utc::now()
-        })
-      } else {
-        Err("Message is too long. Max characters is 512.".into())
-      }
-  }
+impl<'a> TextMessagePackage<'a> {
+    pub fn new(from: MessageFrom, message: &'a str) -> Result<Self, String> {
+        if message.len() <= 512 {
+            Ok(Self {
+                message_id: gen_id(),
+                r#type: MessageType::Text,
+                from,
+                message,
+                timestamp: Utc::now(),
+            })
+        } else {
+            Err("Message is too long. Max characters is 512.".into())
+        }
+    }
 
-  pub fn id(&self) -> u32 {
-    self.id
-  }
+    pub fn message_id(&self) -> u32 {
+        self.message_id
+    }
 
-  pub fn from(&self) -> MessageFrom {
-    self.from.clone()
-  }
+    pub fn r#type(&self) -> MessageType {
+        self.r#type.clone()
+    }
 
-  pub fn message(&self) -> String {
-    self.message.clone()
-  }
+    pub fn from(&self) -> MessageFrom {
+        self.from.clone()
+    }
 
-  pub fn timestamp(&self) -> String {
-    self.timestamp.to_string()
-  }
+    pub fn message(&self) -> &str {
+        self.message
+    }
 
-  pub fn pretty_timestamp(&self) -> String {
-    self.timestamp.format("%A, %B, %e, %Y at %I:%M%p").to_string()
-  }
+    pub fn timestamp(&self) -> String {
+        self.timestamp.to_string()
+    }
 
-  fn as_any(&self) -> &dyn Any {
-    self
-  }
+    pub fn pretty_timestamp(&self) -> String {
+        self.timestamp
+            .format("%A, %B, %e, %Y at %I:%M%p")
+            .to_string()
+    }
+
+    // fn as_any(&self) -> &dyn Any {
+    //   self
+    // }
 }
-
