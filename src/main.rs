@@ -20,13 +20,16 @@ use structs::messages::{
 
 #[tokio::main]
 async fn main() -> mongodb::error::Result<()> {
-    // let collection = get_collection("message_history").await?;
-    // let result = collection.find(doc! { "type": "text" }).await?;
-    // let mut messages: Vec<_> = result.collect().await;
 
+    // =============================
+    // Get messages
+    // =============================
     let messages = get_messages().await?;
     println!("Messages {:#?}", messages);
 
+    // =============================
+    // Insert 5 text messages
+    // =============================
     let v = vec![0,1,2,3,4];
     for (index, item) in v.iter().enumerate() {
         let text = format!("Hello, world{index}");
