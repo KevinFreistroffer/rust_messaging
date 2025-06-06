@@ -7,6 +7,7 @@ use std::any::Any;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TextMessagePackage<'a> {
     message_id: u32,
+    sender_id: u32,
     r#type: MessageType,
     message: &'a str,
     from: MessageFrom,
@@ -14,10 +15,11 @@ pub struct TextMessagePackage<'a> {
 }
 
 impl<'a> TextMessagePackage<'a> {
-    pub fn new(from: MessageFrom, message: &'a str) -> Result<Self, String> {
+    pub fn new(sender_id: u32, from: MessageFrom, message: &'a str) -> Result<Self, String> {
         if message.len() <= 512 {
             Ok(Self {
                 message_id: gen_id(),
+                sender_id,
                 r#type: MessageType::Text,
                 from,
                 message,
@@ -32,6 +34,10 @@ impl<'a> TextMessagePackage<'a> {
         self.message_id
     }
 
+    pub fn sender_id(&self) -> u32 {
+        self.sender_id
+    }
+
     pub fn r#type(&self) -> MessageType {
         self.r#type.clone()
     }
@@ -44,7 +50,11 @@ impl<'a> TextMessagePackage<'a> {
         self.message
     }
 
-    pub fn timestamp(&self) -> String {
+    pub fn timestamp(&self) -> DateTime<Utc> {
+        self.timestamp
+    }
+
+    pub fn timestamp_string(&self) -> String {
         self.timestamp.to_string()
     }
 

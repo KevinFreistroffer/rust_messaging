@@ -1,93 +1,133 @@
 use crate::db::get_collection;
-use crate::enums::{Message};
-use crate::enums::Message::{File, Image};
-use crate::enums::MessageFrom;
-use crate::structs::messages::text::TextMessagePackage;
-use futures::stream::{StreamExt, TryStreamExt};
-use mongodb::bson::{Document, doc};
-use mongodb::bson::to_document;
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
+use crate::enums::{Message, MessageType, MessageFrom};
+use crate::structs::messages::{
+    text::TextMessagePackage, 
+    image::ImageMessagePackage, 
+    file::FileMessagePackage
+};
+use chrono::{DateTime, Utc};
+use mongodb::bson::{Document, doc, to_document, from_document};
+use mongodb::error::Result as MongoResult;
+use futures::StreamExt;
 
-pub async fn get_messages<'a>()
--> Result<Vec<Result<Document, mongodb::error::Error>>, mongodb::error::Error> {
-    let collection = get_collection("message_history").await?;
-    let cursor = collection.find(doc! { "type": "text" }).await?;
-    let v: Vec<Result<Document, mongodb::error::Error>> = cursor.collect().await;
-
-    Ok(v)
-}
-
-// pub async fn insert_message<'a>(message: Message<'a>) {
-//     println!("db::saveMessage(): {:?}", message);
-//     let collection = get_collection("message_history").await?;
-//     let cursor = collection.insert_one(message).await?;
-//     let v: Vec<Result<Document, mongodb::error::Error>> = cursor.collect().await;
-
-//     Ok(())
-// }
-
-pub async fn insert_text_message<'a>(message: TextMessagePackage<'a>) -> Result<(), mongodb::error::Error> {
-    println!("db::saveMessage(): {:?}", message);
-    let collection = get_collection("message_history").await?;
-    let result = collection.insert_one(to_document(&message).unwrap()).await?;
-    let id = result.inserted_id;
-    println!("db::saveMessage result: {:?}", id);
-
+// Generic function to save any message type to MongoDB
+pub async fn save_message(collection_name: &str, message: Document) -> MongoResult<()> {
+    let collection = get_collection(collection_name).await?;
+    collection.insert_one(message, None).await?;
     Ok(())
 }
 
-// pub fn find_message_by_id<'a>(message_id: u32) -> Option<Message<'a>> {
-//     let messages = get_messages();
+// Save text message
+pub async fn save_text_message(message: TextMessagePackage<'_>) -> MongoResult<()> {
+    let doc = to_document(&message)?;
+    save_message("messages", doc).await
+}
 
-//     messages
-//         .iter()
-//         .find(|message| match message {
-//             Message::Text(message) => message.message_id() == message_id,
-//             Message::Image(message) => message.message_id() == message_id,
-//             Message::File(message) => message.message_id() == message_id,
-//         })
-//         .cloned()
-// }
+// Save image message
+pub async fn save_image_message(message: ImageMessagePackage) -> MongoResult<()> {
+    let doc = to_document(&message)?;
+    save_message("messages", doc).await
+}
 
-// pub fn find_messages_by_text<'a>(text: String) -> Option<Vec<Message<'a>>> {
-//     let messages: Vec<Message> = get_messages();
+// Save file message
+pub async fn save_file_message(message: FileMessagePackage) -> MongoResult<()> {
+    let doc = to_document(&message)?;
+    save_message("messages", doc).await
+}
 
-//     let results: Vec<Message> = messages
-//         .iter()
-//         .filter(|message| {
-//             if let Message::Text(msg_package) = message {
-//                 msg_package.message() == text
-//             } else {
-//                 false
-//             }
-//         })
-//         .cloned()
-//         .collect();
+// Retrieve all messages
+pub async fn get_all_messages() -> MongoResult<Vec<Document>> {
+    let collection = get_collection("messages").await?;
+    let mut cursor = collection.find(doc! {}, None).await?;
+    let mut messages = Vec::new();
+    while let Some(doc) = cursor.next().await {
+        messages.push(doc?);
+    }
+    Ok(messages)
+}
 
-//     if !results.is_empty() {
-//         Some(results)
-//     } else {
-//         None
-//     }
-// }
+// Retrieve messages by type
+pub async fn get_messages_by_type(message_type: MessageType) -> MongoResult<Vec<Document>> {
+    let collection = get_collection("messages").await?;
+    let type_str = match message_type {
+        MessageType::Text => "Text",
+        MessageType::Image => "Image",
+        MessageType::File => "File",
+    };
+    let filter = doc! { "type": type_str };
+    let mut cursor = collection.find(filter, None).await?;
+    let mut messages = Vec::new();
+    while let Some(doc) = cursor.next().await {
+        messages.push(doc?);
+    }
+    Ok(messages)
+}
 
-// pub fn find_messages_from_sender<'a>(from: MessageFrom) -> Option<Vec<Message<'a>>> {
-//     let messages: Vec<Message> = get_messages();
+// Retrieve messages in date range
+pub async fn get_messages_by_date_range(
+    start_date: DateTime<Utc>,
+    end_date: DateTime<Utc>,
+) -> MongoResult<Vec<Document>> {
+    let collection = get_collection("messages").await?;
+    let filter = doc! {
+        "timestamp": {
+            "$gte": start_date.to_rfc3339(),
+            "$lte": end_date.to_rfc3339()
+        }
+    };
+    let mut cursor = collection.find(filter, None).await?;
+    let mut messages = Vec::new();
+    while let Some(doc) = cursor.next().await {
+        messages.push(doc?);
+    }
+    Ok(messages)
+}
 
-//     let results: Vec<Message> = messages
-//         .iter()
-//         .filter(|message| match message {
-//             Message::Text(msg) => msg.from() == from,
-//             Image(msg) => msg.from() == from,
-//             File(msg) => msg.from() == from,
-//         })
-//         .cloned()
-//         .collect();
+// Retrieve messages by user type (Agent/User)
+pub async fn get_messages_by_user_type(user_type: MessageFrom) -> MongoResult<Vec<Document>> {
+    let collection = get_collection("messages").await?;
+    let type_str = match user_type {
+        MessageFrom::Agent => "Agent",
+        MessageFrom::User => "User",
+    };
+    let filter = doc! { "from": type_str };
+    let mut cursor = collection.find(filter, None).await?;
+    let mut messages = Vec::new();
+    while let Some(doc) = cursor.next().await {
+        messages.push(doc?);
+    }
+    Ok(messages)
+}
 
-//     if !results.is_empty() {
-//         Some(results)
-//     } else {
-//         None
-//     }
-// }
+// Retrieve messages by sender ID
+pub async fn get_messages_by_sender_id(sender_id: u32) -> MongoResult<Vec<Document>> {
+    let collection = get_collection("messages").await?;
+    let filter = doc! { "sender_id": sender_id as i32 };
+    let mut cursor = collection.find(filter, None).await?;
+    let mut messages = Vec::new();
+    while let Some(doc) = cursor.next().await {
+        messages.push(doc?);
+    }
+    Ok(messages)
+}
+
+// Helper function to deserialize documents back to message types
+pub fn deserialize_message(doc: &Document) -> Result<Message, Box<dyn std::error::Error>> {
+    let message_type = doc.get_str("type")?;
+    
+    match message_type {
+        "Text" => {
+            let text_msg: TextMessagePackage = from_document(doc.clone())?;
+            Ok(Message::Text(text_msg))
+        },
+        "Image" => {
+            let img_msg: ImageMessagePackage = from_document(doc.clone())?;
+            Ok(Message::Image(img_msg))
+        },
+        "File" => {
+            let file_msg: FileMessagePackage = from_document(doc.clone())?;
+            Ok(Message::File(file_msg))
+        },
+        _ => Err("Unknown message type".into()),
+    }
+}
