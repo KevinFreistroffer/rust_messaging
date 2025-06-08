@@ -28,4 +28,4 @@
 ## Futures
 Add sender_id. Create users. User structs store an id at least
 
-Note: These suggestions build on your existing TextMessagePackage and MessageFrom structures while maintaining the current architecture.
+Note: These suggestions build on your existing TextMessagePackage and MessageFromType structures while maintaining the current architecture.

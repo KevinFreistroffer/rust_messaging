@@ -1,5 +1,5 @@
-use crate::enums::MessageFrom;
-use crate::utils::gen_id;
+use crate::enums::MessageFromType;
+use crate::utils::gen_message_id;
 use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -7,14 +7,14 @@ use serde::{Deserialize, Serialize};
 pub struct FileMessagePackage {
     message_id: u32,
     file_data: Vec<u8>,
-    from: MessageFrom,
+    from: MessageFromType,
     timestamp: DateTime<Utc>,
 }
 
 impl FileMessagePackage {
-    pub fn new(from: MessageFrom, file_data: Vec<u8>) -> Result<Self, String> {
+    pub fn new(from: MessageFromType, file_data: Vec<u8>) -> Result<Self, String> {
         Ok(Self {
-            message_id: gen_id(),
+            message_id: gen_message_id(),
             from,
             file_data,
             timestamp: Utc::now(),
@@ -25,7 +25,7 @@ impl FileMessagePackage {
         self.message_id
     }
 
-    pub fn from(&self) -> MessageFrom {
+    pub fn from(&self) -> MessageFromType {
         self.from.clone()
     }
 

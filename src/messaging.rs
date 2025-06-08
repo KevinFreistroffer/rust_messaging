@@ -1,11 +1,11 @@
 use crate::db::get_collection;
-use crate::enums::{Message};
+use crate::enums::Message;
 use crate::enums::Message::{File, Image};
-use crate::enums::MessageFrom;
+use crate::enums::MessageFromType;
 use crate::structs::messages::text::TextMessagePackage;
 use futures::stream::{StreamExt, TryStreamExt};
-use mongodb::bson::{Document, doc};
 use mongodb::bson::to_document;
+use mongodb::bson::{Document, doc};
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 
@@ -27,10 +27,14 @@ pub async fn get_messages<'a>()
 //     Ok(())
 // }
 
-pub async fn insert_text_message<'a>(message: TextMessagePackage<'a>) -> Result<(), mongodb::error::Error> {
+pub async fn insert_text_message<'a>(
+    message: TextMessagePackage<'a>,
+) -> Result<(), mongodb::error::Error> {
     println!("db::saveMessage(): {:?}", message);
     let collection = get_collection("message_history").await?;
-    let result = collection.insert_one(to_document(&message).unwrap()).await?;
+    let result = collection
+        .insert_one(to_document(&message).unwrap())
+        .await?;
     let id = result.inserted_id;
     println!("db::saveMessage result: {:?}", id);
 
@@ -72,7 +76,7 @@ pub async fn insert_text_message<'a>(message: TextMessagePackage<'a>) -> Result<
 //     }
 // }
 
-// pub fn find_messages_from_sender<'a>(from: MessageFrom) -> Option<Vec<Message<'a>>> {
+// pub fn find_messages_from_sender<'a>(from: MessageFromType) -> Option<Vec<Message<'a>>> {
 //     let messages: Vec<Message> = get_messages();
 
 //     let results: Vec<Message> = messages

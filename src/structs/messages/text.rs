@@ -1,5 +1,6 @@
-use crate::enums::{MessageFrom, MessageType};
-use crate::utils::gen_id;
+use crate::enums::{MessageFromType, MessageType};
+use crate::structs::user::User;
+use crate::utils::gen_message_id;
 use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::any::Any;
@@ -9,17 +10,17 @@ pub struct TextMessagePackage<'a> {
     message_id: u32,
     r#type: MessageType,
     message: &'a str,
-    from: MessageFrom,
+    sender: User,
     timestamp: DateTime<Utc>,
 }
 
 impl<'a> TextMessagePackage<'a> {
-    pub fn new(from: MessageFrom, message: &'a str) -> Result<Self, String> {
+    pub fn new(sender: User, message: &'a str) -> Result<Self, String> {
         if message.len() <= 512 {
             Ok(Self {
-                message_id: gen_id(),
+                message_id: gen_message_id(),
                 r#type: MessageType::Text,
-                from,
+                sender,
                 message,
                 timestamp: Utc::now(),
             })
@@ -36,8 +37,8 @@ impl<'a> TextMessagePackage<'a> {
         self.r#type.clone()
     }
 
-    pub fn from(&self) -> MessageFrom {
-        self.from.clone()
+    pub fn sender(&self) -> &User {
+        &self.sender
     }
 
     pub fn message(&self) -> &str {

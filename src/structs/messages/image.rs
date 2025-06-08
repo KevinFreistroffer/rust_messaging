@@ -1,5 +1,5 @@
-use crate::enums::MessageFrom;
-use crate::utils::gen_id;
+use crate::enums::MessageFromType;
+use crate::utils::gen_message_id;
 use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::any::Any;
@@ -8,15 +8,21 @@ use std::any::Any;
 pub struct ImageMessagePackage {
     message_id: u32,
     image_data: Vec<u8>,
-    from: MessageFrom,
+    sender_id: u32,
+    from: MessageFromType,
     timestamp: DateTime<Utc>,
 }
 
 impl ImageMessagePackage {
-    pub fn new(from: MessageFrom, image_data: Vec<u8>) -> Result<Self, String> {
+    pub fn new(
+        sender_id: u32,
+        sender_type: MessageFromType,
+        image_data: Vec<u8>,
+    ) -> Result<Self, String> {
         Ok(Self {
-            message_id: gen_id(),
-            from,
+            message_id: gen_message_id(),
+            sender_id,
+            from: sender_type,
             image_data: image_data,
             timestamp: Utc::now(),
         })
@@ -26,7 +32,7 @@ impl ImageMessagePackage {
         self.message_id
     }
 
-    pub fn from(&self) -> MessageFrom {
+    pub fn from(&self) -> MessageFromType {
         self.from.clone()
     }
 
