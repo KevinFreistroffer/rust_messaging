@@ -3,6 +3,9 @@ mod enums;
 mod messaging;
 mod structs;
 mod utils;
+mod validate_and_get_env_vars;
+
+use dotenv::dotenv;
 use enums::Message::{CryptoTransfer, File, Image, Text};
 use enums::{Message, MessageFromType, MessageType};
 use futures::stream::{StreamExt, TryStreamExt};
@@ -13,18 +16,23 @@ use mongodb::{
     bson::{Document, doc},
     options::{ClientOptions, ServerApi, ServerApiVersion},
 };
+use std::env;
+use structs::envvars::EnvVars;
 use structs::messages::{
     crypto::CryptoTransferMessagePackage, file::FileMessagePackage, image::ImageMessagePackage,
     text::TextMessagePackage,
 };
 use structs::user::User;
+use validate_and_get_env_vars::validate_and_get_env_vars;
 
 #[tokio::main]
 async fn main() -> mongodb::error::Result<()> {
-    let send_text_messages = true;
-    let send_image_messages = false;
-    let send_file_messages = false;
-    let send_crypto_transfer_messages = false;
+    let EnvVars {
+        send_text_messages,
+        send_file_messages,
+        send_image_messages,
+        send_crypto_transfer_messages,
+    } = validate_and_get_env_vars();
 
     // =============================
     // Get messages
@@ -32,18 +40,36 @@ async fn main() -> mongodb::error::Result<()> {
     let messages = get_messages().await?;
     println!("Messages {:#?}", messages);
 
-    if send_text_messages {
+    if !send_text_messages.is_empty() {
         let user = User::new(MessageFromType::User);
         let agent = User::new(MessageFromType::Agent);
 
         // =============================
-        // Insert a text message
+        // Insert a User text message
         // =============================
         let text = "USER text message";
-        let new_text_message: Result<TextMessagePackage<'_>, String> =
+        let user_text_message: Result<TextMessagePackage<'_>, String> =
             TextMessagePackage::new(user, &text);
 
-        match new_text_message {
+        match user_text_message {
+            Ok(message) => {
+                println!("Message {:?}", message);
+                let result = insert_text_message(message).await?;
+                println!("Result {:?}", result);
+            }
+            Err(e) => {
+                println!("Error creating a message to insert {:?}", e);
+            }
+        }
+
+        // =============================
+        // Insert an Agent text message
+        // =============================
+        let text = "AGENT text message";
+        let agent_text_message: Result<TextMessagePackage<'_>, String> =
+            TextMessagePackage::new(agent, &text);
+
+        match agent_text_message {
             Ok(message) => {
                 println!("Message {:?}", message);
                 let result = insert_text_message(message).await?;
