@@ -10,7 +10,7 @@ use enums::Message::{CryptoTransfer, File, Image, Text};
 use enums::{Message, MessageFromType, MessageType};
 use futures::stream::{StreamExt, TryStreamExt};
 use image::ImageReader;
-use messaging::{get_messages, insert_text_message};
+use messaging::{debug_saved_message, get_messages, insert_text_message};
 use mongodb::{
     Client, Collection, Database,
     bson::{Document, doc},
@@ -34,19 +34,16 @@ async fn main() -> mongodb::error::Result<()> {
         send_crypto_transfer_messages,
     } = validate_and_get_env_vars();
 
-    // =============================
-    // Get messages
-    // =============================
+    // ===== Get all messages from the database =====
     let messages = get_messages().await?;
     println!("Messages {:#?}", messages);
 
+    // ===== Send Text Messages =====
     if !send_text_messages.is_empty() {
         let user = User::new(MessageFromType::User);
         let agent = User::new(MessageFromType::Agent);
 
-        // =============================
-        // Insert a User text message
-        // =============================
+        // ===== Create a User text message =====
         let text = "USER text message";
         let user_text_message: Result<TextMessagePackage<'_>, String> =
             TextMessagePackage::new(user, &text);
@@ -55,7 +52,10 @@ async fn main() -> mongodb::error::Result<()> {
             Ok(message) => {
                 println!("Message {:?}", message);
                 let result = insert_text_message(message).await?;
-                println!("Result {:?}", result);
+
+                if let Some(document) = result {
+                    debug_saved_message(document, true);
+                }
             }
             Err(e) => {
                 println!("Error creating a message to insert {:?}", e);
@@ -73,7 +73,9 @@ async fn main() -> mongodb::error::Result<()> {
             Ok(message) => {
                 println!("Message {:?}", message);
                 let result = insert_text_message(message).await?;
-                println!("Result {:?}", result);
+                if let Some(document) = result {
+                    debug_saved_message(document, true);
+                }
             }
             Err(e) => {
                 println!("Error creating a message to insert {:?}", e);
@@ -119,54 +121,4 @@ async fn main() -> mongodb::error::Result<()> {
     // }
 
     Ok(())
-}
-
-pub fn print_details(message_package: Message) {
-    match message_package {
-        Text(message) => {
-            println!("Message ID: {:?}", message.message_id());
-            println!("From Sender ID: {:?}", message.sender().sender_id());
-            println!("From Sender Type: {:?}", message.sender().sender_type());
-            println!("Timestamp: {:?}", message.pretty_timestamp());
-            println!("Message: {:?}", message.message());
-        }
-        Image(message) => {
-            println!(
-                "Message ({:?}) from {:?} on {:?}",
-                message.message_id(),
-                message.from(),
-                message.pretty_timestamp()
-            );
-            println!(
-                "Message image_data length: {:?}",
-                message.image_data().len()
-            );
-        }
-        File(message) => {
-            println!(
-                "Message ({:?}) from {:?} on {:?}",
-                message.message_id(),
-                message.from(),
-                message.pretty_timestamp()
-            );
-            println!("Message image_data length: {:?}", message.file_data().len());
-        }
-        CryptoTransfer(message) => {
-            println!(
-                "Crypto Transfer ({:?}) from {:?} on {:?}",
-                message.message_id(),
-                message.from(),
-                message.pretty_timestamp()
-            );
-            println!(
-                "Transfer: {} {} to {}",
-                message.amount(),
-                message.token_symbol(),
-                message.recipient_address()
-            );
-            if let Some(signature) = message.transaction_signature() {
-                println!("Transaction signature: {}", signature);
-            }
-        }
-    }
 }
