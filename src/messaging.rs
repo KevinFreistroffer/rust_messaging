@@ -123,12 +123,8 @@ pub fn debug_saved_message(message_package: Document, pretty_print:bool) {
     }
     if let Some(timestamp) = message_package.get("timestamp") {
         if pretty_print {
-            if let Bson::DateTime(timestamp) = timestamp {
-                let dt = timestamp
-                println!("Timestamp: {:?}", timestamp);
-            } else {
-                println!("Timestamp: {:?}", timestamp);
-            }
+            // IMPLEMENT THIS
+            println!("Timestamp: {:?}", timestamp);
         }
     }
     // match message_package {
